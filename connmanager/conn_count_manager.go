@@ -17,15 +17,12 @@ type SimpleConnCountManager struct {
 }
 
 func NewSimpleConnCountManager(connLimit int) *SimpleConnCountManager {
-	res := &SimpleConnCountManager{
+	return &SimpleConnCountManager{
 		connCount:     0,
 		connLimit:     connLimit,
 		connCountLock: sync.RWMutex{},
 		cond:          *sync.NewCond(&sync.Mutex{}),
 	}
-	// sync.Cond must be Locked before Waiting on it
-	res.cond.L.Lock()
-	return res
 }
 
 func (c *SimpleConnCountManager) getConnCount() int {
@@ -47,6 +44,7 @@ func (c *SimpleConnCountManager) Acquire(ctx context.Context) bool {
 	}
 	var condChan chan bool
 	go func() {
+		c.cond.L.Lock()
 		c.cond.Wait()
 		condChan <- true
 	}()
